@@ -26,7 +26,7 @@ func (s *service) UpsertUser(req []models.User) error {
 	)
 
 	result, err := s.db.NewInsert().
-		Model(&users).
+		Model(&req).
 		On("CONFLICT (email) DO UPDATE").
 		Set("first_name = EXCLUDED.first_name").
 		Set("last_name = EXCLUDED.last_name").

@@ -17,3 +17,17 @@ CREATE TABLE public.user (
 
 CREATE INDEX user_email ON public.user (email)
 ```
+
+## Factors Affecting Performance
+
+- 1. Banyaknya jumlah csv data
+- 2. Koneksi jaringan internet
+- 3. Hardware device
+- 4. Database koneksi
+- 5. Condingan & SQL Query
+- 6. Rebalancing consumer (Kafka)
+- 7. Etc
+
+## Tested By Me
+
+Seperti yang saya bilang jika anda upload **1JT** csv data nanti akan dibagi dengan `CHUNK_CSV_SIZE`, contoh jadi **1JT / 100RB** berarti nanti bakal ada **10 Process Batch** yang dimana nanti akan di publish ke `kafka`, anda bisa sesuaikan `CHUNK_CSV_SIZE` dan `GORUTINE_POOL_SIZE` sesuai kebutuhan anda masing - masing, jika dirasa data yang di upload semakin besar anda bisa increase `GORUTINE_POOL_SIZE`, perlu di ingat jangan terlalu besar karena bisa memperlambat dan terlalu banyak menggunakan `cpu`. saya testing `300RB` sampai `500RB` data itu masih terbilang lumayan agak cepat dan low consuming memory walau cpu agak sedikit naik.

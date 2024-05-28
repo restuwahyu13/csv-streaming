@@ -33,7 +33,7 @@ services:
       test: env | grep HOME
     environment:
       KAFKA_BROKER_ID: 0
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # <- sesuaikan dengan kebutuhan anda
       KAFKA_NUM_PARTITIONS: 3  # <- sesuaikan dengan kebutuhan anda
       KAFKA_RECEIVE_BUFFER_BYTES: 1073741824  # <- sesuaikan dengan kebutuhan anda
       KAFKA_MESSAGE_MAX_BYTES: 1073741824  # <- sesuaikan dengan kebutuhan anda

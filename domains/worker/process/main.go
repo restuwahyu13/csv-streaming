@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -29,10 +30,11 @@ type worker struct {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
+
 	var (
-		env    *configs.Environtment = new(configs.Environtment)
-		ctx    context.Context       = context.Background()
-		broker packages.Ikafka       = packages.NewKafka(ctx, []string{env.BSN})
+		env *configs.Environtment = new(configs.Environtment)
+		ctx context.Context       = context.Background()
 	)
 
 	err := packages.ViperRead(".env", env)
@@ -46,6 +48,8 @@ func main() {
 		packages.Logrus("fatal", err)
 		return
 	}
+
+	broker := packages.NewKafka(ctx, []string{env.BSN})
 
 	service := NewService(ctx, db, broker)
 	handler := NewHandler(service)
@@ -102,7 +106,6 @@ func (w *worker) Consumer(pool *ants.PoolWithFunc) (*kafka.Reader, error) {
 		consumerGroupName string = "csv-process-group"
 	)
 
-	defer pool.Release()
 	res, err := w.broker.Consumer(consumerTopicName, consumerGroupName, func(message kafka.Message) error {
 		if err := pool.Invoke(message); err != nil {
 			return err
@@ -133,7 +136,11 @@ func (w *worker) Listener() {
 		return
 	}
 
-	defer consumer.Close()
+	defer func() {
+		pool.Release()
+		consumer.Close()
+	}()
+
 	for {
 		select {
 		case <-signalChan:

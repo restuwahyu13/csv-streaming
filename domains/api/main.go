@@ -11,9 +11,8 @@ import (
 
 func main() {
 	var (
-		env    *configs.Environtment = new(configs.Environtment)
-		ctx    context.Context       = context.Background()
-		broker packages.Ikafka       = packages.NewKafka(ctx, []string{env.BSN})
+		env *configs.Environtment = new(configs.Environtment)
+		ctx context.Context       = context.Background()
 	)
 
 	err := packages.ViperRead(".env", env)
@@ -21,6 +20,8 @@ func main() {
 		packages.Logrus("error", err)
 		return
 	}
+
+	broker := packages.NewKafka(ctx, []string{env.BSN})
 
 	service := NewService(ctx, broker)
 	handler := NewHander(service)
