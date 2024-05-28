@@ -20,13 +20,13 @@ CREATE INDEX user_email ON public.user (email)
 
 ## Factors Affecting Performance
 
-- 1. Banyaknya jumlah csv data
-- 2. Koneksi jaringan internet
-- 3. Hardware device
-- 4. Database koneksi
-- 5. Condingan & SQL Query
-- 6. Rebalancing consumer (Kafka)
-- 7. Etc
+- Banyaknya jumlah csv data
+- Koneksi jaringan internet
+- Hardware device
+- Database koneksi
+- Condingan & SQL Query
+- Rebalancing consumer (Kafka)
+- Etc
 
 ## Tested By Me
 
