@@ -1,0 +1,101 @@
+version: '3'
+services:
+  ################################
+  # CORDINATOR SERVICE ENVIRONMENT
+  ################################
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    restart: always
+    healthcheck:
+      start_period: 60s
+      retries: 5
+      timeout: 120s
+      interval: 30s
+      test: env | grep HOME
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - 2181:2181
+    networks:
+      - go-networks
+  ################################
+  # BROKER SERVICE ENVIRONMENT
+  ################################
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    restart: always
+    healthcheck:
+      start_period: 60s
+      retries: 5
+      timeout: 120s
+      interval: 30s
+      test: env | grep HOME
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3  # <- sesuaikan dengan kebutuhan anda
+      KAFKA_RECEIVE_BUFFER_BYTES: 1073741824  # <- sesuaikan dengan kebutuhan anda
+      KAFKA_MESSAGE_MAX_BYTES: 1073741824  # <- sesuaikan dengan kebutuhan anda
+      KAFKA_MAX_REQUEST_SIZE: 1073741824  # <- sesuaikan dengan kebutuhan anda
+      KAFKA_AUTO_COMMIT_INTERVAL_MS: 3000
+      KAFKA_REQUEST_TIMEOUT_MS: 30000
+      KAFKA_MAX_BLOCK_MS: 30000
+      KAFKA_SESSION_TIMEOUT_MS: 60000
+      KAFKA_COMPRESSION_TYPE: 'snappy'
+      KAFKA_INTER_BROKER_LISTENER_NAME: CONTAINER_HOST
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTAINER_HOST:PLAINTEXT, CLIENT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: CONTAINER_HOST://kafka:29092, CLIENT_HOST://192.168.64.15:9092 # <- ganti dengan ip address anda
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    ports:
+      - 29092:29092
+      - 9092:9092
+    networks:
+      - go-networks
+    depends_on:
+      - zookeeper
+  ################################
+  # DASHBOARD SERVICE ENVIRONMENT
+  ################################
+  dashboard:
+    image: provectuslabs/kafka-ui:latest
+    restart: always
+    healthcheck:
+      start_period: 60s
+      retries: 5
+      timeout: 120s
+      interval: 30s
+      test: env | grep HOME
+    environment:
+      DYNAMIC_CONFIG_ENABLED: true
+      KAFKA_CLUSTERS_0_NAME: kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    ports:
+      - 8080:8080
+    networks:
+      - go-networks
+  ################################
+  # DATABASE SERVICE ENVIRONMENT
+  ################################
+  database:
+    image: postgres:14-alpine
+    restart: always
+    healthcheck:
+      start_period: 60s
+      retries: 5
+      timeout: 120s
+      interval: 30s
+      test: env | grep HOME
+    environment:
+      POSTGRES_USER: restuwahyu13
+      POSTGRES_PASSWORD: restuwahyu13
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+    networks:
+      - go-networks
+  ### ===================================
+  ### NETWORKS GROUP FOR ONE SAME SERVICE
+  ### ===================================
+networks:
+  go-networks:
