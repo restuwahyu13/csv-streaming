@@ -55,8 +55,8 @@ func (h *kafka) Publisher(topic string, key, value interface{}) error {
 		BatchSize:              1000,
 		MaxAttempts:            10,
 		Balancer:               &kafkaBroker.LeastBytes{},
-		ErrorLogger: kafkaBroker.LoggerFunc(func(s string, i ...interface{}) {
-			Logrus("error", s)
+		ErrorLogger: kafkaBroker.LoggerFunc(func(msg string, args ...interface{}) {
+			Logrus("error", msg)
 		}),
 	}
 
@@ -142,8 +142,8 @@ func (h *kafka) Consumer(topic, groupId string, handler func(message kafkaBroker
 		MaxWait:                time.Duration(time.Second * 5),
 		PartitionWatchInterval: time.Duration(time.Second * 3),
 		JoinGroupBackoff:       time.Duration(time.Second * 3),
-		ErrorLogger: kafkaBroker.LoggerFunc(func(s string, i ...interface{}) {
-			Logrus("error", s)
+		ErrorLogger: kafkaBroker.LoggerFunc(func(msg string, args ...interface{}) {
+			Logrus("error", msg)
 		}),
 	})
 
@@ -208,8 +208,8 @@ func (h *kafka) consumerGroup(protocol string, topic, groupId string) error {
 				RebalanceTimeout:       time.Duration(time.Second * 10),
 				PartitionWatchInterval: time.Duration(time.Second * 3),
 				JoinGroupBackoff:       time.Duration(time.Second * 3),
-				ErrorLogger: kafkaBroker.LoggerFunc(func(s string, i ...interface{}) {
-					Logrus("error", s)
+				ErrorLogger: kafkaBroker.LoggerFunc(func(msg string, args ...interface{}) {
+					Logrus("error", msg)
 				}),
 			})
 		}
