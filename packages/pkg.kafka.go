@@ -208,8 +208,8 @@ func (h *kafka) consumerGroup(protocol string, topic, groupId string) error {
 				ID:                     groupId,
 				StartOffset:            partition[i],
 				RetentionTime:          time.Duration(time.Hour * 24),
-				Timeout:                time.Duration(time.Second * 15),
-				RebalanceTimeout:       time.Duration(time.Second * 10),
+				RebalanceTimeout:       time.Duration(time.Second * 60),
+				Timeout:                time.Duration(time.Second * 3),
 				PartitionWatchInterval: time.Duration(time.Second * 3),
 				JoinGroupBackoff:       time.Duration(time.Second * 3),
 				ErrorLogger: kafkaBroker.LoggerFunc(func(msg string, args ...interface{}) {
