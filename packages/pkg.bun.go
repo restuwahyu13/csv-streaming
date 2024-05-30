@@ -16,9 +16,9 @@ func Database(dsn string) (*bun.DB, error) {
 	db := sql.OpenDB(pgdriver.NewConnector(
 		pgdriver.WithDSN(dsn),
 		pgdriver.WithWriteTimeout(time.Minute*time.Duration(10)),
-		pgdriver.WithTimeout(time.Minute*time.Duration(1)),
-		pgdriver.WithDialTimeout(time.Minute*time.Duration(1)),
-		pgdriver.WithReadTimeout(time.Minute*time.Duration(1)),
+		pgdriver.WithTimeout(time.Minute*time.Duration(10)),
+		pgdriver.WithDialTimeout(time.Minute*time.Duration(10)),
+		pgdriver.WithReadTimeout(time.Minute*time.Duration(5)),
 		pgdriver.WithInsecure(true),
 	))
 
