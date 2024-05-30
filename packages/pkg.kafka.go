@@ -152,6 +152,10 @@ func (h *kafka) Consumer(topic, groupId string, handler func(message kafkaBroker
 		return nil, err
 	}
 
+	if err := h.consumerGroup(TCP, topic, groupId); err != nil {
+		return nil, err
+	}
+
 	return reader, nil
 }
 
