@@ -123,6 +123,7 @@ func (h *kafka) Consumer(topic, groupId string, handler func(message kafkaBroker
 				return
 			}
 		}
+
 	},
 		ants.WithPreAlloc(true),
 		ants.WithNonblocking(true),
@@ -196,26 +197,40 @@ func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[i
 }
 
 func (h *kafka) consumerGroup(protocol string, topic, groupId string) error {
-	for _, address := range h.brokers {
-		partitionsAndOffsets, err := h.findPartitionAndOffset(protocol, address, topic)
+	partitionsAndOffsets, err := h.findPartitionAndOffset(protocol, h.brokers[0], topic)
+	if err != nil {
+		return err
+	}
+
+	for _, partition := range partitionsAndOffsets {
+		consumerGroup, err := kafkaBroker.NewConsumerGroup(kafkaBroker.ConsumerGroupConfig{
+			Brokers:                h.brokers,
+			Topics:                 []string{topic},
+			ID:                     groupId,
+			RetentionTime:          time.Duration(time.Hour * 24),
+			RebalanceTimeout:       time.Duration(time.Second * 60),
+			Timeout:                time.Duration(time.Second * 3),
+			PartitionWatchInterval: time.Duration(time.Second * 3),
+			JoinGroupBackoff:       time.Duration(time.Second * 3),
+			ErrorLogger: kafkaBroker.LoggerFunc(func(msg string, args ...interface{}) {
+				Logrus("error", msg)
+			}),
+		})
+
 		if err != nil {
 			return err
 		}
 
-		for i, partition := range partitionsAndOffsets {
-			kafkaBroker.NewConsumerGroup(kafkaBroker.ConsumerGroupConfig{
-				Topics:                 []string{topic},
-				ID:                     groupId,
-				StartOffset:            partition[i],
-				RetentionTime:          time.Duration(time.Hour * 24),
-				RebalanceTimeout:       time.Duration(time.Second * 60),
-				Timeout:                time.Duration(time.Second * 3),
-				PartitionWatchInterval: time.Duration(time.Second * 3),
-				JoinGroupBackoff:       time.Duration(time.Second * 3),
-				ErrorLogger: kafkaBroker.LoggerFunc(func(msg string, args ...interface{}) {
-					Logrus("error", msg)
-				}),
-			})
+		next, err := consumerGroup.Next(h.ctx)
+		if err != nil {
+			return err
+		}
+
+		commitOffset := make(map[string]map[int]int64)
+		commitOffset[topic] = partition
+
+		if err := next.CommitOffsets(commitOffset); err != nil {
+			return err
 		}
 	}
 
