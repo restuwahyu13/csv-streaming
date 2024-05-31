@@ -3,9 +3,7 @@ package packages
 import (
 	"context"
 	"encoding/json"
-	"net"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,8 +21,8 @@ type (
 	Ikafka interface {
 		Publisher(topic string, key, value interface{}) error
 		Consumer(topic, groupId string, handler func(message kafkaBroker.Message) error) (*kafkaBroker.Reader, error)
-		findPartitionAndOffset(protocol, address, topic string) ([]map[int]int64, error)
-		consumerGroup(protocol string, topic, groupId string) error
+		findPartitionAndOffset(protocol, address, topic string) ([]map[string]map[int]int64, error)
+		ConsumerGroup(protocol string, topic, groupId string) error
 	}
 
 	kafka struct {
@@ -153,14 +151,10 @@ func (h *kafka) Consumer(topic, groupId string, handler func(message kafkaBroker
 		return nil, err
 	}
 
-	if err := h.consumerGroup(TCP, topic, groupId); err != nil {
-		return nil, err
-	}
-
 	return reader, nil
 }
 
-func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[int]int64, error) {
+func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[string]map[int]int64, error) {
 	con, err := kafkaBroker.Dial(protocol, address)
 	if err != nil {
 		return nil, err
@@ -173,36 +167,36 @@ func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[i
 	}
 
 	partitionAndOffset := make(map[int]int64)
-	partitionsAndOffsets := []map[int]int64{}
+	topicPartitionAndOffset := make(map[string]map[int]int64)
+	topicPartitionsAndOffsets := []map[string]map[int]int64{}
 
 	for _, partition := range partitions {
-		conLeader, err := kafkaBroker.DialLeader(h.ctx, protocol, net.JoinHostPort(partition.Leader.Host, strconv.Itoa(partition.Leader.Port)), partition.Topic, partition.ID)
+		conLeader, err := kafkaBroker.DialLeader(h.ctx, protocol, address, topic, partition.ID)
 		if err != nil {
 			return nil, err
 		}
 
 		defer conLeader.Close()
-		now := time.Now().Add(-time.Second * 60)
-
-		offset, err := conLeader.ReadOffset(now)
+		offset, err := conLeader.ReadFirstOffset()
 		if err != nil {
 			return nil, err
 		}
 
 		partitionAndOffset[partition.ID] = offset
-		partitionsAndOffsets = append(partitionsAndOffsets, partitionAndOffset)
+		topicPartitionAndOffset[partition.Topic] = partitionAndOffset
+		topicPartitionsAndOffsets = append(topicPartitionsAndOffsets, topicPartitionAndOffset)
 	}
 
-	return partitionsAndOffsets, nil
+	return topicPartitionsAndOffsets, nil
 }
 
-func (h *kafka) consumerGroup(protocol string, topic, groupId string) error {
-	partitionsAndOffsets, err := h.findPartitionAndOffset(protocol, h.brokers[0], topic)
+func (h *kafka) ConsumerGroup(protocol string, topic, groupId string) error {
+	topicPartitionsAndOffsets, err := h.findPartitionAndOffset(protocol, h.brokers[0], topic)
 	if err != nil {
 		return err
 	}
 
-	for _, partition := range partitionsAndOffsets {
+	for _, partition := range topicPartitionsAndOffsets {
 		consumerGroup, err := kafkaBroker.NewConsumerGroup(kafkaBroker.ConsumerGroupConfig{
 			Brokers:                h.brokers,
 			Topics:                 []string{topic},
@@ -226,10 +220,7 @@ func (h *kafka) consumerGroup(protocol string, topic, groupId string) error {
 			return err
 		}
 
-		commitOffset := make(map[string]map[int]int64)
-		commitOffset[topic] = partition
-
-		if err := next.CommitOffsets(commitOffset); err != nil {
+		if err := next.CommitOffsets(partition); err != nil {
 			return err
 		}
 	}

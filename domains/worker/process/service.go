@@ -45,7 +45,6 @@ func (s *service) UpsertUser(req []models.User) error {
 
 	if len(users) > 0 {
 		if err := s.broker.Publisher(queueName, nil, users); err != nil {
-
 			return err
 		}
 	}
