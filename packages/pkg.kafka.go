@@ -189,7 +189,7 @@ func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[s
 		}
 
 		defer conLeader.Close()
-		now := time.Now().Add(-time.Minute)
+		now := time.Now().Add(-time.Second * 5)
 
 		offset, err := conLeader.ReadOffset(now)
 		if err != nil {

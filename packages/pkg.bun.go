@@ -29,8 +29,8 @@ func Database(dsn string) (*bun.DB, error) {
 
 	if db != nil {
 		defer Logrus("info", "Database connection success")
-		db.SetConnMaxIdleTime(time.Duration(time.Second * time.Duration(30)))
-		db.SetConnMaxLifetime(time.Duration(time.Second * time.Duration(30)))
+		db.SetConnMaxIdleTime(time.Duration(time.Minute * time.Duration(30)))
+		db.SetConnMaxLifetime(time.Duration(time.Minute * time.Duration(30)))
 	}
 
 	bundb := bun.NewDB(db, pgdialect.New())
