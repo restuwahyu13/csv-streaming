@@ -22,7 +22,7 @@ type (
 		Publisher(topic string, key, value interface{}) error
 		Consumer(topic, groupId string, handler func(message kafkaBroker.Message) error) (*kafkaBroker.Reader, error)
 		findPartitionAndOffset(protocol, address, topic string) ([]map[string]map[int]int64, error)
-		ConsumerGroup(protocol string, topic, groupId string) error
+		consumerGroup(protocol string, topic, groupId string) error
 	}
 
 	kafka struct {
@@ -111,6 +111,14 @@ func (h *kafka) Consumer(topic, groupId string, handler func(message kafkaBroker
 				return
 			}
 
+			Logrus("println", "=============================================")
+			Logrus("info", "KAFKA CONSUMER VALUE: %v", string(message.Value))
+			Logrus("info", "KAFKA CONSUMER KEY: %v", string(message.Key))
+			Logrus("info", "KAFKA CONSUMER TOPIC: %v", message.Topic)
+			Logrus("info", "KAFKA CONSUMER PARTITION: %d", message.Partition)
+			Logrus("info", "KAFKA CONSUMER OFFSET: %v", message.Offset)
+			Logrus("println", "=============================================")
+
 			if err := handler(message); err != nil {
 				Logrus("error", err)
 				return
@@ -151,6 +159,10 @@ func (h *kafka) Consumer(topic, groupId string, handler func(message kafkaBroker
 		return nil, err
 	}
 
+	if err := h.consumerGroup(TCP, topic, groupId); err != nil {
+		return nil, err
+	}
+
 	return reader, nil
 }
 
@@ -177,7 +189,9 @@ func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[s
 		}
 
 		defer conLeader.Close()
-		offset, err := conLeader.ReadFirstOffset()
+		now := time.Now().Add(-time.Minute)
+
+		offset, err := conLeader.ReadOffset(now)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +204,7 @@ func (h *kafka) findPartitionAndOffset(protocol, address, topic string) ([]map[s
 	return topicPartitionsAndOffsets, nil
 }
 
-func (h *kafka) ConsumerGroup(protocol string, topic, groupId string) error {
+func (h *kafka) consumerGroup(protocol string, topic, groupId string) error {
 	topicPartitionsAndOffsets, err := h.findPartitionAndOffset(protocol, h.brokers[0], topic)
 	if err != nil {
 		return err
@@ -220,6 +234,13 @@ func (h *kafka) ConsumerGroup(protocol string, topic, groupId string) error {
 			return err
 		}
 
+		Logrus("println", "=============================================")
+		Logrus("info", "KAFKA CONSUMER GROUP ASSIGMENTS: %#v", next.Assignments)
+		Logrus("info", "KAFKA CONSUMER GROUP GROUPID: %v", next.GroupID)
+		Logrus("info", "KAFKA CONSUMER GROUP MEMBERID: %v", next.MemberID)
+		Logrus("println", "=============================================")
+
+		defer consumerGroup.Close()
 		if err := next.CommitOffsets(partition); err != nil {
 			return err
 		}

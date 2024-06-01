@@ -117,10 +117,6 @@ func (w *worker) Consumer(pool *ants.PoolWithFunc) (*kafka.Reader, error) {
 		return res, err
 	}
 
-	if err := w.broker.ConsumerGroup(packages.TCP, consumerTopicName, consumerGroupName); err != nil {
-		return res, err
-	}
-
 	return res, nil
 }
 

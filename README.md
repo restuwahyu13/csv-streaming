@@ -31,13 +31,3 @@ CREATE INDEX user_email ON public.user (email)
 ## Tested By Me
 
 Seperti yang saya bilang jika anda upload **1JT** csv data nanti akan dibagi dengan `CHUNK_CSV_SIZE`, contoh jadi **1JT / 100RB** berarti nanti bakal ada **10 Process Batch** yang dimana nanti akan di publish ke `kafka`, anda bisa sesuaikan `CHUNK_CSV_SIZE` dan `GORUTINE_POOL_SIZE` sesuai kebutuhan anda masing - masing, jika dirasa data yang di upload semakin besar anda bisa increase `GORUTINE_POOL_SIZE`, perlu di ingat jangan terlalu besar karena bisa memperlambat dan terlalu banyak menggunakan `cpu`. saya testing `300RB` sampai `500RB` data itu masih terbilang lumayan agak cepat dan low consuming memory walau cpu agak sedikit naik.
-
-## Consumer Group
-
-Anda bisa menggunakan consumer group dengan cara memanggil seperti berikut ini, dan menaruh nya di consumer
-
-```go
-	if err := w.broker.ConsumerGroup(packages.TCP, consumerTopicName, consumerGroupName); err != nil {
-		return res, err
-	}
-```
